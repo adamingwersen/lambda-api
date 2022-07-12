@@ -10,5 +10,30 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "cross-env": "^7.0.3",
+    "dotenv-safe": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.101",
+    "@types/dotenv-safe": "^8.1.2",
+    "@types/serverless": "^3.12.7",
+    "@typescript-eslint/eslint-plugin": "^5.30.6",
+    "@typescript-eslint/parser": "^5.30.6",
+    "eslint": "^8.19.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^3.2.5",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
+    "serverless": "^3.20.0",
+    "serverless-offline": "^8.8.1",
+    "serverless-plugin-typescript": "^2.1.2",
+    "ts-node": "^10.8.2",
+    "tsconfig-paths": "^4.0.0",
+    "typescript": "^4.7.4"
   }
 }
