@@ -1,3 +1,5 @@
+org: adamildk
+app: lambda-api
 service: lambda-api
 
 provider:

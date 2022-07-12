@@ -1,16 +1,12 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { formatResponse } from '../../libs/utils';
+import { UserAccess } from '../../libs/schema';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    const parsedBody = JSON.parse(event.body || '');
-    return {
-      statusCode: 200,
-      body: `I got... service = ${parsedBody?.service}`,
-    };
+    const parsedBody: UserAccess = JSON.parse(event.body || '');
+    return formatResponse(200, JSON.stringify(parsedBody));
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: 'I did not get it',
-    };
+    return formatResponse(500, '', err);
   }
 };

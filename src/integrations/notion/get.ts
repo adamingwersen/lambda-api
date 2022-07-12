@@ -1,16 +1,10 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { formatResponse } from '../../libs/utils';
 
 export const handler: APIGatewayProxyHandler = async (_event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    const response = {
-      statusCode: 200,
-      body: 'This works..',
-    };
-    return response;
+    return formatResponse(200, 'you did it');
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: 'This does not work',
-    };
+    return formatResponse(500, '', err);
   }
 };
