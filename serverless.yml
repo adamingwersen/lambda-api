@@ -26,3 +26,9 @@ functions:
       - http:
           path: notion/post
           method: post
+  notionInitialize:
+    handler: src/integrations/notion/initialize.handler
+    events:
+      - http:
+          path: notion/initialize
+          method: post

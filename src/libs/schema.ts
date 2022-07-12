@@ -9,6 +9,7 @@ export interface Cookie {
 }
 
 export interface User {
+  id: number;
   role: string;
   email: string;
   googlePhoto: string;
@@ -17,12 +18,13 @@ export interface User {
 export interface Integration {
   name: string;
   domain: string;
-  admins: User[];
+  admins: number[];
 }
 
 export interface Organisation {
+  name: string;
   domain: string;
-  admin: User;
+  admin: number;
   integrations: Integration[];
 }
 
