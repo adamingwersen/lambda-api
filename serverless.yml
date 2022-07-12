@@ -10,3 +10,17 @@ provider:
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
+
+functions:
+  notionGet:
+    handler: src/integrations/notion/get.handler
+    events:
+      - http:
+          path: notion/get
+          method: get
+  notionPost:
+    handler: src/integrations/notion/post.handler
+    events:
+      - http:
+          path: notion/post
+          method: post
