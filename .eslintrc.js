@@ -24,6 +24,7 @@ module.exports = {
     'import/extensions': 'off',
     'import/no-unresolved': 'error',
     'no-console': 'off',
+    '@typescript-eslint/no-var-requires': 0,
     'no-unused-vars': ['off', { args: 'all', argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-unused-vars': ['off', { args: 'all', argsIgnorePattern: '^_' }],
     'import/prefer-default-export': 'off',

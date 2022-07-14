@@ -13,6 +13,9 @@ plugins:
   - serverless-plugin-typescript
   - serverless-offline
 
+custom:
+  CHROME_AWS_LAYER_ARN: arn:aws:lambda:eu-central-1:764866452798:layer:chrome-aws-lambda:31
+
 functions:
   notionGet:
     handler: src/integrations/notion/get.handler
@@ -27,6 +30,7 @@ functions:
           path: notion/post
           method: post
   notionInitialize:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
     handler: src/integrations/notion/initialize.handler
     events:
       - http:
