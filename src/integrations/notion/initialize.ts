@@ -1,7 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { formatResponse } from '../../libs/utils';
 import { UserAccess } from '../../libs/schema';
-
 const chromium = require('@sparticuz/chrome-aws-lambda');
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
