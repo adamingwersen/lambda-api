@@ -10,6 +10,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   try {
     const payload: UserAccess = JSON.parse(event.body || '');
     const cookies: Cookie[] = payload?.cookies;
+
     const browser = await chromium.puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -23,74 +24,40 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     await page.setCookie(...cookies);
     await page.setViewport({ width: 1200, height: 800 });
 
-    // page.on('request', request => {
-    //   if (request.isInterceptResolutionHandled()) return;
-    //   request.continue();
-    // });
-
     let publicPageDataBody = null;
     let subscriptionDataBody = null;
+    let userAnalyticsSettings = null;
 
     page.on('request', request => {
-      // console.log('>>', request.method(), request.url());
       request.continue();
     });
 
     page.on('response', async response => {
-      if (response.url().includes('getPublicPageData')) {
+      if (response.url().includes('getPublicPageData') && response.status() === 200) {
         publicPageDataBody = await response.json();
       }
-      if (response.url().includes('getSubscriptionData')) {
+      if (response.url().includes('getSubscriptionData') && response.status() === 200) {
         subscriptionDataBody = await response.json();
+      }
+      if (response.url().includes('getUserAnalyticsSettings') && response.status() === 200) {
+        userAnalyticsSettings = await response.json();
       }
     });
 
-    // let responseBody;
-    // page.on('request', async request => {
-    //   const response = await request.response();
-
-    //   if (request.url().includes('getPublicPageData')) {
-    //     responseBody = await response.buffer();
-    //     return;
-    //   }
-    //   request.continue();
-    // });
-
     await page.goto(entry, { waitUntil: 'networkidle0' });
-
-    // const getPublicPageData = await page.waitForResponse(async response => {
-    //   if (response.request().url().toString().includes('getPublicPageData')) {
-    //     const shit = await response.json();
-    //     return shit;
-    //   }
-    //   return 'Nope';
-    // });
-
-    // let publicPageDataPayload = null;
-
-    // await page.on('response', async response => {
-    //   const request = response.request();
-    //   if (request.url().includes('getPublicPageData')) {
-    //     publicPageDataPayload = await response.json();
-    //   }
-    // });
-
-    // const getPublicPageData = await page.waitForResponse(response => {
-    //   return response.url().toString().includes('getPublicPageData') && response.status() === 200;
-    // });
-    // if (typeof responseBody === 'undefined') {
-    //   return formatResponse(200, JSON.stringify(responseBody));
-    // }
 
     await browser.close();
 
-    if (publicPageDataBody == null) return formatResponse(200, "Couldn't find data");
+    if (!userAnalyticsSettings || !subscriptionDataBody || !publicPageDataBody) {
+      return formatResponse(300, 'Payload not intercepted');
+    }
 
-    return formatResponse(200, (JSON.stringify(publicPageDataBody), JSON.stringify(subscriptionDataBody)));
-
-    // const xpath = '//*[@class=" col1"]/h1';
-    // const textField = await page.waitForXPath(xpath);
-    // const textContent = await textField.evaluate(element => element.textContent);
+    return formatResponse(
+      200,
+      JSON.stringify(userAnalyticsSettings)
+        .concat(JSON.stringify(subscriptionDataBody))
+        .concat(JSON.stringify(publicPageDataBody))
+    );
   } catch (err) {
     return formatResponse(500, '', err);
   }
