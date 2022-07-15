@@ -41,3 +41,11 @@ functions:
       - http:
           path: figma/scan
           method: post
+  # Zapier
+  zapierScan:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+    handler: src/integrations/zapier/scan.handler
+    events:
+      - http:
+          path: zapier/scan
+          method: post
