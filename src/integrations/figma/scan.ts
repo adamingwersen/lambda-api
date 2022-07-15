@@ -3,8 +3,8 @@ import { formatResponse } from '../../libs/utils';
 import { UserAccess, Cookie } from '../../libs/schema';
 const chromium = require('@sparticuz/chrome-aws-lambda');
 
-const integrationName = 'Asana';
-const entry = 'https://app.asana.com/admin/members';
+const integrationName = 'Figma';
+const entry = 'https://www.figma.com/files';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -24,25 +24,31 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     await page.setCookie(...cookies);
     await page.setViewport({ width: 1200, height: 800 });
 
+    let sessionState = null;
+    let userState = null;
+
     page.on('request', request => {
       request.continue();
     });
 
+    page.on('response', async response => {
+      if (response.url().includes('session/state') && response.status() === 200) {
+        sessionState = await response.json();
+      }
+      if (response.url().includes('user/state') && response.status() === 200) {
+        userState = await response.json();
+      }
+    });
+
     await page.goto(entry, { waitUntil: 'networkidle0' });
 
-    const xpath = '//*[@class="AdminConsoleMembersListRow-userEmail"]';
-    await page.waitForXPath(xpath);
-    const members = await page.$x(xpath);
-    const memberEmails = await page.evaluate((...members) => {
-      return members.map(e => e.textContent);
-    }, ...members);
+    if (!sessionState || !userState) {
+      return formatResponse(300, 'Payload not intercepted');
+    }
 
     browser.close();
 
-    if (memberEmails.length < 1) {
-      return formatResponse(300, 'Did not find any users');
-    }
-    return formatResponse(200, `...Found ${memberEmails.length} members: ${memberEmails}`);
+    return formatResponse(200, JSON.stringify(sessionState).concat(JSON.stringify(userState)));
   } catch (err) {
     return formatResponse(500, '', err);
   }

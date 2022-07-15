@@ -33,3 +33,11 @@ functions:
       - http:
           path: asana/scan
           method: post
+  # Figma
+  figmaScan:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+    handler: src/integrations/figma/scan.handler
+    events:
+      - http:
+          path: figma/scan
+          method: post
