@@ -17,29 +17,19 @@ custom:
   CHROME_AWS_LAYER_ARN: arn:aws:lambda:eu-central-1:764866452798:layer:chrome-aws-lambda:31
 
 functions:
-  notionGet:
-    handler: src/integrations/notion/get.handler
-    events:
-      - http:
-          path: notion/get
-          method: get
-  notionPost:
-    handler: src/integrations/notion/post.handler
-    events:
-      - http:
-          path: notion/post
-          method: post
-  notionInitialize:
-    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
-    handler: src/integrations/notion/initialize.handler
-    events:
-      - http:
-          path: notion/initialize
-          method: post
+  # Notion
   notionScan:
     layers: ${self:custom.CHROME_AWS_LAYER_ARN}
     handler: src/integrations/notion/scan.handler
     events:
       - http:
           path: notion/scan
+          method: post
+  # Asana
+  asanaScan:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+    handler: src/integrations/asana/scan.handler
+    events:
+      - http:
+          path: asana/scan
           method: post
