@@ -6,7 +6,7 @@ provider:
   name: aws
   runtime: nodejs14.x
   memorySize: 1600
-  timeout: 50
+  timeout: 30
   region: eu-central-1
 
 plugins:
@@ -57,3 +57,20 @@ functions:
       - http:
           path: metabase/scan
           method: post
+  # Miro
+  miroScan:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+    handler: src/integrations/miro/scan.handler
+    events:
+      - http:
+          path: miro/scan
+          method: post
+
+  # # Mailchimp
+  # mailchimpScan:
+  #   layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+  #   handler: src/integrations/mailchimp/scan.handler
+  #   events:
+  #     - http:
+  #         path: mailchimp/scan
+  #         method: post

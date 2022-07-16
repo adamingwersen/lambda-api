@@ -5,23 +5,15 @@ import { Puppeteer, Browser, Page } from 'puppeteer-core';
 
 const chromium = require('@sparticuz/chrome-aws-lambda');
 
-const integrationName = 'Metabase';
-// const entry = 'https://[workspace].metabase.app';
+const integrationName = 'Miro';
+const entry = 'https://miro.com';
+const queryString =
+  'accounts/?fields=id%2Ctitle%2Ctype%2Crole%2Climits%2Ctrial%2Cexpired%2CexpirationDate%2CcreatedAt%2CcurrentUserPermission%2CcurrentUserConnection%7Bid%2CisAccountCreator%2ClastActivityDate%2Cpermissions%2CorganizationConnection%7Blicense%7D%2Crole%2CselfLink%2CsharedBoardsNumber%2Cuser%7Bemail%7D%7D%2Cfeatures%2CinvitationLink%2Corganization%7Bid%2CbillingData%2CcurrentUserPermission%2CidleTimeout%2Ctitle%2Cfeatures%2Ctype%2Cnotifications%2CdataClassification%7D%2Cpicture%2Cprojects%7Bid%2Ctitle%2CisStarred%7D%2Cintegrations%2CintercomEnabled%2CwhoCanInvite%2CinviteExternalUsersEnabled%2Ccredits%2CsharingPolicy%7BmoveBoardToAccountEnabled%7D%2CdomainJoinPolicy%2CdomainProps%2CjoinPolicyForExternal%2CparticipantPostInvitationPaymentTest%2Cnotifications%2CorganizationExtension%7BaccountDiscovery%7D%2CcollaborationSettings%2CusersNumber';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     const payload: UserAccess = JSON.parse(event.body || '');
     const cookies: Cookie[] = payload?.cookies;
-
-    const domainCookie = cookies.find(obj => {
-      return obj.name === 'metabase.SESSION';
-    });
-    const domain = domainCookie?.domain;
-    if (!domain) {
-      return formatResponse(300, 'Could not identify domain cookie');
-    }
-
-    const entry = 'https://'.concat(domain);
 
     const browser: Browser = await chromium.puppeteer.launch({
       args: chromium.args,
@@ -36,31 +28,27 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     await page.setCookie(...cookies);
     await page.setViewport({ width: 1200, height: 800 });
 
-    let current = null;
-    let properties = null;
+    let accountFields = null;
 
     page.on('request', request => {
       request.continue();
     });
 
     page.on('response', async response => {
-      if (response.url().includes('current') && response.status() === 200) {
-        current = await response.json();
-      }
-      if (response.url().includes('properties') && response.status() === 200) {
-        properties = await response.json();
+      if (response.url().includes(queryString) && response.status() === 200) {
+        accountFields = await response.json();
       }
     });
 
     await page.goto(entry, { waitUntil: 'networkidle0' });
 
-    if (!current || !properties) {
+    if (!accountFields) {
       return formatResponse(300, 'Payload not intercepted');
     }
 
     browser.close();
 
-    return formatResponse(200, JSON.stringify(current).concat(JSON.stringify(properties)));
+    return formatResponse(200, JSON.stringify(accountFields));
   } catch (err) {
     return formatResponse(500, '', err);
   }
