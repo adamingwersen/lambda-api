@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { Puppeteer, Browser } from 'puppeteer-core';
+import { Puppeteer, Browser, Page } from 'puppeteer-core';
 import { formatResponse } from '../../libs/utils';
 import { UserAccess, Cookie } from '../../libs/schema';
 const chromium = require('@sparticuz/chrome-aws-lambda');
@@ -20,7 +20,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
       ignoreHTTPSErrors: true,
     });
 
-    const page = await browser.newPage();
+    const page: Page = await browser.newPage();
     await page.setRequestInterception(true);
     await page.setCookie(...cookies);
     await page.setViewport({ width: 1200, height: 800 });
