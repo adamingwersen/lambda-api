@@ -49,3 +49,11 @@ functions:
       - http:
           path: zapier/scan
           method: post
+  # Metabase
+  metabaseScan:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+    handler: src/integrations/metabase/scan.handler
+    events:
+      - http:
+          path: metabase/scan
+          method: post
