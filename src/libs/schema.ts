@@ -34,3 +34,24 @@ export interface UserAccess {
   cookies: Cookie[];
   integration: Integration;
 }
+
+export interface PaymentPlan {
+  name: string;
+  isFree: boolean;
+  price: number;
+  nextInstallment: number; // Unix Timestamp (UTC-TZ)
+}
+
+export interface ScanReturn {
+  inputData: Partial<UserAccess>;
+  serviceName: string;
+  paymentPlan: PaymentPlan;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userImage: string;
+  users: string[];
+  workspaces: string[];
+  userRole: string;
+  blob: any;
+}
