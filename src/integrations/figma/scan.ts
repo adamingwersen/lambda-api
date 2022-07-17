@@ -1,56 +1,57 @@
-import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { Puppeteer, Browser, Page } from 'puppeteer-core';
-import { formatResponse } from '../../libs/utils';
-import { UserAccess, Cookie } from '../../libs/schema';
-const chromium = require('@sparticuz/chrome-aws-lambda');
+import {
+  APIGatewayProxyHandler,
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+} from "aws-lambda";
+import { formatResponse, instantiatePuppeteer } from "../../libs/utils";
+import { UserAccess, Cookie } from "../../libs/schema";
 
-const integrationName = 'Figma';
-const entry = 'https://www.figma.com/files';
+const integrationName = "Figma";
+const entry = "https://www.figma.com/files";
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent,
+): Promise<APIGatewayProxyResult> => {
   try {
-    const payload: UserAccess = JSON.parse(event.body || '');
+    const payload: UserAccess = JSON.parse(event.body || "");
     const cookies: Cookie[] = payload?.cookies;
 
-    const browser: Browser = await chromium.puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: true,
-      ignoreHTTPSErrors: true,
-    });
-
-    const page: Page = await browser.newPage();
-    await page.setRequestInterception(true);
-    await page.setCookie(...cookies);
-    await page.setViewport({ width: 1200, height: 800 });
+    // Start puppeteer / chrome-aws-lambda
+    const [browser, page, error] = await instantiatePuppeteer(cookies);
+    if (error) return formatResponse(500, "", error);
 
     let sessionState = null;
     let userState = null;
 
-    page.on('request', request => {
+    page.on("request", (request) => {
       request.continue();
     });
 
-    page.on('response', async response => {
-      if (response.url().includes('session/state') && response.status() === 200) {
+    page.on("response", async (response) => {
+      if (
+        response.url().includes("session/state") &&
+        response.status() === 200
+      ) {
         sessionState = await response.json();
       }
-      if (response.url().includes('user/state') && response.status() === 200) {
+      if (response.url().includes("user/state") && response.status() === 200) {
         userState = await response.json();
       }
     });
 
-    await page.goto(entry, { waitUntil: 'networkidle0' });
+    await page.goto(entry, { waitUntil: "networkidle0" });
 
     if (!sessionState || !userState) {
-      return formatResponse(300, 'Payload not intercepted');
+      return formatResponse(300, "Payload not intercepted");
     }
 
     browser.close();
 
-    return formatResponse(200, JSON.stringify(sessionState).concat(JSON.stringify(userState)));
+    return formatResponse(
+      200,
+      JSON.stringify(sessionState).concat(JSON.stringify(userState)),
+    );
   } catch (err) {
-    return formatResponse(500, '', err);
+    return formatResponse(500, "", err);
   }
 };
