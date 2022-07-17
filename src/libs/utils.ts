@@ -35,9 +35,11 @@ export const instantiatePuppeteer = async (
     });
 
     const page: Page = await browser.newPage();
-    await page.setRequestInterception(true);
-    await page.setCookie(...cookies);
-    await page.setViewport({ width: 1200, height: 800 });
+    await Promise.all([
+      page.setRequestInterception(true),
+      page.setCookie(...cookies),
+      page.setViewport({ width: 1200, height: 800 }),
+    ]);
     return [browser, page, null];
   } catch (error: unknown) {
     if (error instanceof Error) return [null, null, error];

@@ -11,8 +11,9 @@ export interface Cookie {
 export interface User {
   id: number;
   role: string;
+  isAdmin: boolean;
   email: string;
-  googlePhoto: string;
+  photoString: string;
 }
 
 export interface Integration {
@@ -44,14 +45,18 @@ export interface PaymentPlan {
 
 export interface ScanReturn {
   inputData: Partial<UserAccess>;
-  serviceName: string;
+  integrationName: string;
+  integrationOrganisationId: string;
   paymentPlan: PaymentPlan;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  userImage: string;
-  users: string[];
-  workspaces: string[];
-  userRole: string;
+  paymentPlanPrice: number;
+  paymentPlanIsActive: boolean;
+  paymentPlanIsTrial: boolean;
+  integrationUserId: string;
+  integrationUserName: string;
+  integrationUserEmail: string;
+  integrationUserImage: string;
+  integrationUsers: User[];
+  integrationWorkspaces: string[];
+  integrationUserRole: string;
   blob: any;
 }
