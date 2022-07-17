@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { formatResponse } from '../../libs/utils';
-import { UserAccess, Cookie } from '../../libs/schema';
+import { UserAccess, Cookie, User, Organisation, Integration } from '../../libs/schema';
 import { Puppeteer, Browser, Page } from 'puppeteer-core';
 
 const chromium = require('@sparticuz/chrome-aws-lambda');
@@ -59,6 +59,17 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     }
 
     browser.close();
+
+    // const jsonThing: RETURN_TYPE = {
+    //   userId: '1',
+    //   users: ['1', '2', '3'],
+    //   workspaces: ['Hada'],
+    //   userRole: 'admin',
+    //   blob: {
+    //     current: JSON.stringify(current),
+    //     properties: JSON.stringify(properties),
+    //   },
+    // };
 
     return formatResponse(200, JSON.stringify(current).concat(JSON.stringify(properties)));
   } catch (err) {
