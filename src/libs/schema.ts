@@ -10,6 +10,7 @@ export interface Cookie {
 
 export interface User {
   id: number;
+  name: string;
   role: string;
   isAdmin: boolean;
   email: string;

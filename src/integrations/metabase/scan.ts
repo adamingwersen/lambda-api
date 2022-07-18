@@ -70,6 +70,7 @@ export const handler: APIGatewayProxyHandler = async (
     const mappedUsers: User[] = rawUserData.map((user) => {
       return {
         id: user?.id,
+        name: undefined,
         role: undefined,
         isAdmin: user?.is_superuser,
         email: user?.email,

@@ -75,6 +75,7 @@ export const handler: APIGatewayProxyHandler = async (
     const mappedUsers: User[] = rawUserData.map((user) => {
       return {
         id: user?.userId,
+        name: undefined,
         role: user?.role,
         isAdmin: user?.role === "editor" ? true : false,
         email: undefined, // Needs to be fixed
