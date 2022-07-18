@@ -4,7 +4,13 @@ import {
   APIGatewayProxyResult,
 } from "aws-lambda";
 import { formatResponse, instantiatePuppeteer } from "../../libs/utils";
-import { UserAccess, Cookie } from "../../libs/schema";
+import {
+  UserAccess,
+  Cookie,
+  ScanReturn,
+  User,
+  PaymentPlan,
+} from "../../libs/schema";
 
 const integrationName = "Notion";
 const entry = "https://notion.so/";
@@ -13,8 +19,11 @@ export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const payload: UserAccess = JSON.parse(event.body || "");
-    const cookies: Cookie[] = payload?.cookies;
+    const {
+      cookies,
+      ...payload
+    }: { cookies: Cookie[]; userAccess: Omit<UserAccess, "cookies"> } =
+      JSON.parse(event?.body ?? "");
 
     // Start puppeteer / chrome-aws-lambda
     const [browser, page, error] = await instantiatePuppeteer(cookies);
@@ -49,9 +58,10 @@ export const handler: APIGatewayProxyHandler = async (
       }
     });
 
-    await page.goto(entry, { waitUntil: "networkidle0" });
-
-    await browser.close();
+    await Promise.all([
+      page.goto(entry, { waitUntil: "networkidle0" }),
+      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+    ]);
 
     if (
       !userAnalyticsSettings ||
@@ -61,12 +71,49 @@ export const handler: APIGatewayProxyHandler = async (
       return formatResponse(300, "Payload not intercepted");
     }
 
-    return formatResponse(
-      200,
-      JSON.stringify(userAnalyticsSettings)
-        .concat(JSON.stringify(subscriptionDataBody))
-        .concat(JSON.stringify(publicPageDataBody)),
-    );
+    const rawUserData: any[] = subscriptionDataBody?.users;
+    const mappedUsers: User[] = rawUserData.map((user) => {
+      return {
+        id: user?.userId,
+        role: user?.role,
+        isAdmin: user?.role === "editor" ? true : false,
+        email: undefined, // Needs to be fixed
+        photoString: undefined, // Needs to be fixed
+      };
+    });
+
+    browser.close();
+
+    const paymentPlan: PaymentPlan = {
+      name: subscriptionDataBody?.type,
+      isFree: !subscriptionDataBody?.hasPaidNonzero,
+      price: undefined, // This needs to be fixed - get upgraded trial
+      nextInstallment: undefined,
+    };
+
+    const scanReturn: ScanReturn = {
+      inputData: payload.userAccess,
+      integrationName: integrationName,
+      integrationOrganisationId: publicPageDataBody?.spaceDomain,
+      paymentPlan: paymentPlan,
+      paymentPlanPrice: undefined,
+      paymentPlanIsActive: undefined,
+      paymentPlanIsTrial: undefined,
+      integrationUserId: userAnalyticsSettings?.user_id,
+      integrationUserName: userAnalyticsSettings?.user_name,
+      integrationUserEmail: userAnalyticsSettings?.email,
+      integrationUserImage: undefined,
+      integrationUsers: mappedUsers,
+      integrationWorkspaces: undefined,
+      integrationUserRole: undefined,
+      blob: {
+        current: JSON.stringify(userAnalyticsSettings),
+        properties: JSON.stringify(subscriptionDataBody),
+        user: JSON.stringify(publicPageDataBody),
+      },
+    };
+
+    return formatResponse(200, JSON.stringify(scanReturn));
   } catch (err) {
     return formatResponse(500, "", err);
   }

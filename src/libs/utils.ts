@@ -6,7 +6,7 @@ const chromium = require("@sparticuz/chrome-aws-lambda");
 
 export const formatResponse = (
   code: number,
-  text?: string,
+  body: string,
   error?,
 ): APIGatewayProxyResult => {
   if (code > 200) {
@@ -17,7 +17,7 @@ export const formatResponse = (
   }
   return {
     statusCode: code,
-    body: `Request succeeded: ${text}`,
+    body: body,
   };
 };
 

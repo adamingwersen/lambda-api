@@ -13,13 +13,11 @@ export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    //const payload: UserAccess = JSON.parse(event.body || "");
     const {
       cookies,
       ...payload
     }: { cookies: Cookie[]; userAccess: Omit<UserAccess, "cookies"> } =
       JSON.parse(event?.body ?? "");
-    //const cookies: Cookie[] = payload?.cookies;
 
     const domainCookie = cookies.find((obj) => {
       return obj.name === "metabase.SESSION";
@@ -62,10 +60,6 @@ export const handler: APIGatewayProxyHandler = async (
       page.goto(entry, { waitUntil: "networkidle0" }),
       page.waitForNavigation({ waitUntil: "domcontentloaded" }),
     ]);
-
-    console.log("current: ", current);
-    console.log("properties: ", properties);
-    console.log("user: ", user);
 
     if (!current || !properties || !user) {
       return formatResponse(300, "Payload not intercepted");
