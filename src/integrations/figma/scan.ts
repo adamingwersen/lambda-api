@@ -62,7 +62,6 @@ export const handler: APIGatewayProxyHandler = async (
 
     // TODO: This should be expanded to handle Organisations as well - Figma has this weird way of splitting it up.
     for await (const teamId of teamIds) {
-      console.log(teamId, typeof teamId);
       page.on("response", async (response) => {
         if (
           response.url().includes(`roles/team/${teamId}`) &&
@@ -138,8 +137,6 @@ export const handler: APIGatewayProxyHandler = async (
           ? flatSummaries[0]?.annual_subscription?.current_period_end
           : flatSummaries[0]?.monthly_subscription?.current_period_end,
     };
-
-    console.log(paymentPlan);
 
     const scanReturn: ScanReturn = {
       inputData: payload.userAccess,
