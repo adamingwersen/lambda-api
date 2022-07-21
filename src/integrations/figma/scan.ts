@@ -4,7 +4,13 @@ import {
   APIGatewayProxyResult,
 } from "aws-lambda";
 import { formatResponse, instantiatePuppeteer } from "../../libs/utils";
-import { UserAccess, Cookie, User } from "../../libs/schema";
+import {
+  UserAccess,
+  Cookie,
+  User,
+  PaymentPlan,
+  ScanReturn,
+} from "../../libs/schema";
 
 const integrationName = "Figma";
 const entry = "https://www.figma.com/";
@@ -26,6 +32,7 @@ export const handler: APIGatewayProxyHandler = async (
     let sessionState = null;
     let userState = null;
     let rolesTeam: any[] = [];
+    let summaries: any[] = [];
 
     page.on("request", (request) => {
       request.continue();
@@ -53,6 +60,7 @@ export const handler: APIGatewayProxyHandler = async (
       return team?.team_id;
     });
 
+    // TODO: This should be expanded to handle Organisations as well - Figma has this weird way of splitting it up.
     for await (const teamId of teamIds) {
       console.log(teamId, typeof teamId);
       page.on("response", async (response) => {
@@ -70,8 +78,6 @@ export const handler: APIGatewayProxyHandler = async (
         page.waitForNavigation({ waitUntil: "domcontentloaded" }),
       ]);
     }
-
-    browser.close();
 
     if (!rolesTeam) {
       return formatResponse(300, "Could not find any teams");
@@ -96,36 +102,69 @@ export const handler: APIGatewayProxyHandler = async (
       ...new Map(mappedUsers.map((item) => [item["id"], item])).values(),
     ];
 
-    // const paymentPlan: PaymentPlan = {
-    //   name: accounts?.objects[0]?.plan?.name,
-    //   isFree: accounts?.objects[0]?.plan?.name === "Free" ? true : false,
-    //   price: accounts?.objects[0]?.plan?.name === "Free" ? 0.0 : 0.0, // This needs to be fixed
-    //   nextInstallment: accounts?.objects[0]?.period_end,
-    // };
+    for await (const teamId of teamIds) {
+      page.on("response", async (response) => {
+        if (response.url().includes("summary") && response.status() === 200) {
+          summaries = await [...summaries, await response.json()];
+        }
+      });
+      await Promise.all([
+        page.goto(entry.concat(`files/team/${teamId}/billing`), {
+          waitUntil: "networkidle0",
+        }),
+        page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+      ]);
+    }
 
-    // const scanReturn: ScanReturn = {
-    //   inputData: payload.userAccess,
-    //   integrationName: integrationName,
-    //   integrationOrganisationId: accounts?.objects[0]?.id,
-    //   paymentPlan: paymentPlan,
-    //   paymentPlanPrice: accounts?.objects[0]?.plan?.name, // This needs to be fixed (upgrade to paid plan)
-    //   paymentPlanIsActive: false, //accounts?.objects[0]?.plan?.metered_task_pricing,
-    //   paymentPlanIsTrial: !accounts?.objects[0]?.is_paid,
-    //   integrationUserId: accounts?.objects[0]?.owner?.id,
-    //   integrationUserName: accounts?.objects[0]?.owner?.name,
-    //   integrationUserEmail: accounts?.objects[0]?.owner?.email,
-    //   integrationUserImage: profiles?.objects[0]?.photo_url,
-    //   integrationUsers: mappedUsers,
-    //   integrationWorkspaces: undefined,
-    //   integrationUserRole: undefined,
-    //   blob: {
-    //     rolesTeam: JSON.stringify(rolesTeam),
-    //     userState: JSON.stringify(userState),
-    //     sessionState: JSON.stringify(sessionState),
-    //   },
-    // };
+    browser.close();
 
-    return formatResponse(200, JSON.stringify(rolesTeam));
+    const flatSummaries: any[] = summaries.flatMap((s) => {
+      return s?.meta;
+    });
+
+    const paymentPlan: PaymentPlan = {
+      name: flatSummaries[0]?.last_monthly_invoice?.product_name,
+      isFree:
+        flatSummaries[0]?.annual_subscription === null &&
+        flatSummaries[0]?.monthly_subscription === null
+          ? true
+          : false,
+      price:
+        flatSummaries[0]?.monthly_subscription === null
+          ? flatSummaries[0]?.annual_subscription?.estimated_amount_due
+          : flatSummaries[0]?.monthly_subscription?.estimated_amount_due * 12,
+      nextInstallment:
+        flatSummaries[0]?.monthly_subscription === null
+          ? flatSummaries[0]?.annual_subscription?.current_period_end
+          : flatSummaries[0]?.monthly_subscription?.current_period_end,
+    };
+
+    console.log(paymentPlan);
+
+    const scanReturn: ScanReturn = {
+      inputData: payload.userAccess,
+      integrationName: integrationName,
+      integrationOrganisationId: teamIds[0],
+      paymentPlan: paymentPlan,
+      paymentPlanPrice: paymentPlan?.price,
+      paymentPlanIsActive: paymentPlan?.nextInstallment === null ? false : true,
+      paymentPlanIsTrial: paymentPlan?.isFree,
+      integrationUserId: sessionState?.meta?.users[0]?.id,
+      integrationUserName: sessionState?.meta?.users[0]?.name,
+      integrationUserEmail: sessionState?.meta?.users[0]?.email,
+      integrationUserImage: sessionState?.meta?.users[0]?.img_url,
+      integrationUsers: uniqueUsers,
+      integrationWorkspaces: undefined,
+      integrationUserRole: undefined,
+      blob: {
+        rolesTeam: JSON.stringify(rolesTeam),
+        userState: JSON.stringify(userState),
+        sessionState: JSON.stringify(sessionState),
+        summaries: JSON.stringify(summaries),
+      },
+    };
+
+    return formatResponse(200, JSON.stringify(scanReturn));
   } catch (err) {
     return formatResponse(500, "", err);
   }
