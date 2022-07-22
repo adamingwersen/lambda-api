@@ -66,6 +66,15 @@ functions:
           path: miro/scan
           method: post
 
+  # Coda
+  codaScan:
+    layers: ${self:custom.CHROME_AWS_LAYER_ARN}
+    handler: src/integrations/coda/scan.handler
+    events:
+      - http:
+          path: coda/scan
+          method: post
+
   # # Mailchimp
   # mailchimpScan:
   #   layers: ${self:custom.CHROME_AWS_LAYER_ARN}
